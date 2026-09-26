@@ -12,11 +12,15 @@ Java lab exercises for an Internet Applications course at NTUA (National Technic
 
 ## Tech stack
 
-- Java (tested with OpenJDK 17)
-- Servlet API (`javax.servlet`) on Apache Tomcat 9
-- JAXP (DOM and SAX parsers from the JDK)
-- Apache Xalan 2.7.3 for the XSLT step (optional)
-- Apache SOAP 2.3.1 with JavaMail 1.4.7 and JavaBeans Activation Framework 1.1.1 for Lab 3
+| Technology | Version used | Notes |
+| --- | --- | --- |
+| Java (Eclipse Temurin JDK) | 27 (27+35) | Latest release as of September 2026 |
+| Apache Tomcat | 11.0.26 | Servlet 6.1, `jakarta.servlet` |
+| JAXP (DOM, SAX) | built into the JDK | Lab 2 |
+| Apache Xalan and serializer | 2.7.3 | Latest release. Optional XSLT step in Lab 2 |
+| Apache SOAP | 2.3.1 | Last release (2002). Runs on Tomcat 11 through Tomcat's Java EE to Jakarta EE migration |
+| JavaMail (`com.sun.mail:javax.mail`) | 1.6.2 | Latest release that keeps the `javax.mail` package that Apache SOAP needs |
+| JavaBeans Activation (`com.sun.activation:jakarta.activation`) | 1.2.2 | Latest release that keeps the `javax.activation` package |
 
 ## Repository layout
 
@@ -44,33 +48,39 @@ Lab3/
 
 ## Prerequisites
 
-- A JDK (8 or newer). Verified with OpenJDK 17 on Ubuntu 20.04 under WSL.
-- Apache Tomcat 9 for Labs 1 and 3. Tomcat 10 and newer use `jakarta.servlet` and will not run this code.
-- For Lab 3, these jars:
+Download these into one folder (called `DEPS` below). These exact versions were tested:
+
+- JDK 27 from [Adoptium](https://adoptium.net/temurin/releases/?version=27), for example `OpenJDK27U-jdk_x64_linux_hotspot_27_35.tar.gz` or `OpenJDK27U-jdk_x64_windows_hotspot_27_35.zip`
+- [Apache Tomcat 11.0.26](https://tomcat.apache.org/download-11.cgi) (`.tar.gz` for Linux, `.zip` for Windows)
+- For Lab 3:
   - `soap.jar` and `soap.war` from [soap-bin-2.3.1.zip](https://archive.apache.org/dist/ws/soap/version-2.3.1/soap-bin-2.3.1.zip)
-  - [mail-1.4.7.jar](https://repo1.maven.org/maven2/javax/mail/mail/1.4.7/mail-1.4.7.jar)
-  - [activation-1.1.1.jar](https://repo1.maven.org/maven2/javax/activation/activation/1.1.1/activation-1.1.1.jar)
-- For the optional XSLT step, [xalan-2.7.3.jar](https://repo1.maven.org/maven2/xalan/xalan/2.7.3/xalan-2.7.3.jar) and [serializer-2.7.3.jar](https://repo1.maven.org/maven2/xalan/serializer/2.7.3/serializer-2.7.3.jar).
+  - [javax.mail-1.6.2.jar](https://repo1.maven.org/maven2/com/sun/mail/javax.mail/1.6.2/javax.mail-1.6.2.jar)
+  - [jakarta.activation-1.2.2.jar](https://repo1.maven.org/maven2/com/sun/activation/jakarta.activation/1.2.2/jakarta.activation-1.2.2.jar)
+- For the optional XSLT step, [xalan-2.7.3.jar](https://repo1.maven.org/maven2/xalan/xalan/2.7.3/xalan-2.7.3.jar) and [serializer-2.7.3.jar](https://repo1.maven.org/maven2/xalan/serializer/2.7.3/serializer-2.7.3.jar)
 
 ## Setup
 
-On Ubuntu:
+Unpack the JDK, Tomcat and `soap-bin-2.3.1.zip`, and put the JDK `bin` folder on your `PATH`. The Linux commands below use these variables:
 
 ```sh
-sudo apt-get install -y openjdk-17-jdk-headless unzip
+export JAVA_HOME=/path/to/jdk-27+35 PATH=/path/to/jdk-27+35/bin:$PATH
+TOMCAT=/path/to/apache-tomcat-11.0.26
+SOAP=$DEPS/soap-2_3_1
+LIBS=$SOAP/lib/soap.jar:$DEPS/javax.mail-1.6.2.jar:$DEPS/jakarta.activation-1.2.2.jar
 ```
 
-Download Tomcat 9 and the jars listed above into one folder. The commands below use these variables:
+On Windows (PowerShell):
 
-```sh
-TOMCAT=/path/to/apache-tomcat-9.0.98
-SOAP=/path/to/soap-2_3_1          # unpacked soap-bin-2.3.1.zip
-LIBS=$SOAP/lib/soap.jar:/path/to/mail-1.4.7.jar:/path/to/activation-1.1.1.jar
+```powershell
+$env:JAVA_HOME = "$DEPS\jdk-27+35"; $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+$TOMCAT = "$DEPS\apache-tomcat-11.0.26"
+$SOAP = "$DEPS\soap-2_3_1"
+$LIBS = "$SOAP\lib\soap.jar;$DEPS\javax.mail-1.6.2.jar;$DEPS\jakarta.activation-1.2.2.jar"
 ```
 
 ## Build and run
 
-All commands below were run on Linux (WSL). On Windows the same steps work with a JDK and Tomcat 9, but use `;` instead of `:` as the classpath separator and `catalina.bat` instead of `catalina.sh`. The Windows variants were not tested.
+The commands below were run on Linux (JDK 27 and Tomcat 11 under WSL Ubuntu 20.04). The same steps were also run on Windows 11 with PowerShell. On Windows use `;` as the classpath separator, backslashes in paths and `catalina.bat` instead of `catalina.sh`.
 
 ### Lab 1: servlets
 
@@ -90,6 +100,8 @@ curl -c cj -d "username=Savvas&product_service=products" http://localhost:8080/m
 curl -b cj -d "form_A=toys" http://localhost:8080/myAskisisDir/form_B
 curl -b cj --data-urlencode "form_B=a Doll" http://localhost:8080/myAskisisDir/form_C
 ```
+
+On Windows start Tomcat with `& "$TOMCAT\bin\catalina.bat" run` in its own window and use `curl.exe` with the same arguments.
 
 The last page says "Transaction Complete!", "Dear Savvas," and "You have selected a Doll." and shows `images/a Doll.png`.
 
@@ -125,17 +137,20 @@ You can also open `Lab2/cars.xml` in a browser that applies the linked styleshee
 
 ### Lab 3: SOAP service
 
-Install the Apache SOAP web application in Tomcat, add the service classes to it and start Tomcat:
+Apache SOAP was written for `javax.servlet`. Tomcat 11 only has `jakarta.servlet`, but it converts old web applications on the fly. A `.war` placed in `webapps-javaee` is migrated with the Apache Tomcat Migration Tool for Jakarta EE and deployed to `webapps`. So build a `soap.war` that holds the Apache SOAP web application, its jars and the service classes, and drop it there:
 
 ```sh
-cp mail-1.4.7.jar activation-1.1.1.jar $TOMCAT/lib/
-mkdir -p $TOMCAT/webapps/soap && (cd $TOMCAT/webapps/soap && unzip -q $SOAP/webapps/soap.war)
-mkdir -p $TOMCAT/webapps/soap/WEB-INF/lib $TOMCAT/webapps/soap/WEB-INF/classes
-cp $SOAP/lib/soap.jar $TOMCAT/webapps/soap/WEB-INF/lib/
+W=/tmp/soapwar
+mkdir -p $W && (cd $W && unzip -q $SOAP/webapps/soap.war)
+mkdir -p $W/WEB-INF/lib $W/WEB-INF/classes
+cp $SOAP/lib/soap.jar $DEPS/javax.mail-1.6.2.jar $DEPS/jakarta.activation-1.2.2.jar $W/WEB-INF/lib/
 cd Lab3
-javac -cp $LIBS -d $TOMCAT/webapps/soap/WEB-INF/classes BVShop/*.java
+javac -cp $LIBS -d $W/WEB-INF/classes BVShop/*.java
+mkdir -p $TOMCAT/webapps-javaee && jar cf $TOMCAT/webapps-javaee/soap.war -C $W .
 $TOMCAT/bin/catalina.sh start
 ```
+
+The Tomcat log shows `Migration completed successfully` and then deploys `/soap`. The client side runs the original unmigrated `soap.jar`.
 
 Deploy the service and run the client:
 
@@ -143,7 +158,7 @@ Deploy the service and run the client:
 URL=http://localhost:8080/soap/servlet/rpcrouter
 java -cp $LIBS org.apache.soap.server.ServiceManagerClient $URL deploy BVCatalogDD.xml
 java -cp $LIBS org.apache.soap.server.ServiceManagerClient $URL list
-java -cp $LIBS:$TOMCAT/webapps/soap/WEB-INF/classes BVShop.BVAdderLister $URL Avensis Toyota 1937 Japan 2008
+java -cp $LIBS:$W/WEB-INF/classes BVShop.BVAdderLister $URL Avensis Toyota 1937 Japan 2008
 ```
 
 Output of the client:
@@ -164,11 +179,15 @@ The Tomcat log shows `Addition at server side: ...` for each vehicle added.
 ## Notes and known limitations
 
 - Compiled classes and IntelliJ project files are no longer in the repository. Build from the `.java` sources as shown above.
-- `Lab1/myAskisisDir.war` is the web application as it was submitted. Its classes were built with an old JDK and it is kept as is.
-- `ManBean.getManYear()` now returns `Integer` instead of `String`. The old code did not compile because the field is an `Integer`. The SOAP bean serializer also needs the getter and setter types to match.
+- Changes made to run on current versions:
+  - `ManBean.getManYear()` now returns `Integer` instead of `String`. The old code did not compile because the field is an `Integer`. The SOAP bean serializer also needs the getter and setter types to match.
+  - The Lab 1 servlets import `jakarta.servlet` instead of `javax.servlet`. `web.xml` uses the Jakarta EE `web-app_6_1.xsd` schema instead of the Servlet 2.2 DTD.
+- `Lab1/myAskisisDir.war` is the web application exactly as it was submitted. It still uses `javax.servlet` and old class files, so it does not run on Tomcat 11 as is. Build the folder version as shown above instead.
+- Apache SOAP 2.3.1 is dead and has no newer release. It is kept because the lab is about it. It runs on Tomcat 11 only through the automatic migration described above. It needs the `javax.mail` and `javax.activation` packages, so the newest releases in those packages are used rather than Jakarta Mail 2.x.
+- Compiling Lab 3 prints deprecation and unchecked warnings. They are harmless.
+- Lab 2 writes lines with `\n` inside the text, so on Windows `output.txt` has mixed line endings. The text itself matches the samples.
 - `form_C` fails with an error if the request has no cookies at all. Go through `form_A` first so the `username` cookie is set.
 - The pages load the Ubuntu font from Google Fonts and one background image from tinypic.com, which no longer exists.
-- Apache SOAP 2.3.1 is long obsolete. It still runs on Tomcat 9 and Java 17.
 
 ## Author
 
