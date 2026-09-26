@@ -20,7 +20,7 @@ public class ManBean {
      /** get & set methods for all properties MUST be present*/
      public String getManName(){return ManName;}
      public void setManName(String name){this.ManName = name;}   
-     public String getManYear(){return ManYear;}
+     public Integer getManYear(){return ManYear;}
      public void setManYear(Integer year){this.ManYear = year;}            
      public String getManCountry(){return ManCountry;}
      public void setManCountry(String country){this.ManCountry = country;}
