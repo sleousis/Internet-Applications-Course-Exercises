@@ -1,0 +1,16 @@
+# Compiled Java classes and IDE build output
+*.class
+out/
+build/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+
+# Output files written by the Lab 2 programs when run
+output.txt
+
+# OS junk
+Thumbs.db
+.DS_Store
