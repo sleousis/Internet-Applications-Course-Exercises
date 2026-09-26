@@ -3,13 +3,12 @@
    Copyright 1999-2004 The Apache Software Foundation
  -->
 
-<!DOCTYPE web-app
-    PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.2//EN"
-    "http://java.sun.com/j2ee/dtds/web-app_2_2.dtd">
-
 <!-- web-app element was originally found empty - the following are additions 
       for the demonstration of HTTPGetServlet -->
-<web-app>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_1.xsd"
+         version="6.1">
   <servlet> <!-- the following name will refer to the sepecified class -->
      <servlet-name>form_A</servlet-name>
      <servlet-class>form_A</servlet-class>
