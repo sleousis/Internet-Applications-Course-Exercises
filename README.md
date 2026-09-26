@@ -10,6 +10,18 @@ Java lab exercises for an Internet Applications course at NTUA (National Technic
 | Lab 2 | XML with DOM, SAX and XSLT | `DOMNavigator` and `XMLEventsPresentor` print an XML tree level by level. `XSLTransformer` builds an HTML table of cars with SAX. `cars.xsl` does the same with XSLT. |
 | Lab 3 | SOAP RPC with Apache SOAP | `BVCatalog` is a vehicle catalog service with `addV`, `getVehicleBean` and `listV`. `BVAdderLister` is a client that adds a vehicle and lists the catalog. Vehicles and manufacturers are sent as Java beans. |
 
+## Download
+
+Ready-to-run builds are on the [Releases page](https://github.com/sleousis/Internet-Applications-Course-Exercises/releases). They are compiled with JDK 27 and run on Java 17 or newer. Lab 1 and Lab 3 also need Apache Tomcat 11. Each zip has a `HOW-TO-RUN.txt` with the exact commands.
+
+| Asset | What it is | How to run it |
+| --- | --- | --- |
+| `internet-apps-<version>-lab1-java.zip` | `myAskisisDir.war`, the Lab 1 web shop | Copy the WAR into Tomcat's `webapps` folder, start Tomcat and open http://localhost:8080/myAskisisDir/index.html |
+| `internet-apps-<version>-lab2-java.zip` | `dom-navigator.jar`, `sax-presentor.jar`, `xsl-transformer.jar`, the sample XML and XSL files, and Xalan | `java -jar dom-navigator.jar generalXML.xml` writes `output.txt`. The SAX tool works the same way. `java -jar xsl-transformer.jar cars.xml` writes `cars.html` |
+| `internet-apps-<version>-lab3-java.zip` | `soap.war` with Apache SOAP and the vehicle catalog service, `bvshop-client.jar` with its `lib` folder, and `BVCatalogDD.xml` | Copy `soap.war` into Tomcat's `webapps-javaee` folder and start Tomcat. Deploy the service with `ServiceManagerClient`, then run `java -jar bvshop-client.jar <url> Avensis Toyota 1937 Japan 2008` |
+
+The Lab 2 and Lab 3 zips include Apache Xalan, Apache SOAP 2.3.1, JavaMail 1.6.2 and JavaBeans Activation 1.2.2. Their licenses allow redistribution. The license texts are in the `licenses` folder.
+
 ## Tech stack
 
 | Technology | Version used | Notes |

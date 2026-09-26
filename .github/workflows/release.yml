@@ -1,0 +1,123 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}
+      TOMCAT: deps/apache-tomcat-11.0.26
+      SOAP: deps/soap-2_3_1
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '27'
+
+      - name: Download dependencies
+        run: |
+          mkdir -p deps && cd deps
+          curl -fsSLO https://archive.apache.org/dist/tomcat/tomcat-11/v11.0.26/bin/apache-tomcat-11.0.26.tar.gz
+          curl -fsSLO https://archive.apache.org/dist/ws/soap/version-2.3.1/soap-bin-2.3.1.zip
+          curl -fsSLO https://repo1.maven.org/maven2/com/sun/mail/javax.mail/1.6.2/javax.mail-1.6.2.jar
+          curl -fsSLO https://repo1.maven.org/maven2/com/sun/activation/jakarta.activation/1.2.2/jakarta.activation-1.2.2.jar
+          curl -fsSLO https://repo1.maven.org/maven2/xalan/xalan/2.7.3/xalan-2.7.3.jar
+          curl -fsSLO https://repo1.maven.org/maven2/xalan/serializer/2.7.3/serializer-2.7.3.jar
+          tar xzf apache-tomcat-11.0.26.tar.gz
+          unzip -q soap-bin-2.3.1.zip
+
+      - name: Collect third-party licenses
+        run: |
+          mkdir -p licenses
+          cp $SOAP/LICENSE licenses/apache-soap-LICENSE.txt
+          unzip -p deps/javax.mail-1.6.2.jar META-INF/LICENSE.txt > licenses/javax.mail-LICENSE.txt
+          unzip -p deps/jakarta.activation-1.2.2.jar META-INF/LICENSE.md > licenses/jakarta.activation-LICENSE.md
+          unzip -p deps/jakarta.activation-1.2.2.jar META-INF/NOTICE.md > licenses/jakarta.activation-NOTICE.md
+          unzip -p deps/xalan-2.7.3.jar META-INF/LICENSE.txt > licenses/xalan-LICENSE.txt
+          unzip -p deps/xalan-2.7.3.jar META-INF/NOTICE.txt > licenses/xalan-NOTICE.txt
+
+      - name: Build Lab 1 web application
+        run: |
+          mkdir -p stage/lab1
+          cp -r Lab1/myAskisisDir stage/lab1-war
+          rm stage/lab1-war/WEB-INF/classes/*.java
+          javac --release 17 -cp $TOMCAT/lib/servlet-api.jar -d stage/lab1-war/WEB-INF/classes \
+              Lab1/myAskisisDir/WEB-INF/classes/*.java
+          (cd stage/lab1-war && zip -qr ../lab1/myAskisisDir.war .)
+          cp release/HOW-TO-RUN.txt stage/lab1/
+
+      - name: Build Lab 2 XML tools
+        run: |
+          L=stage/lab2
+          mkdir -p $L
+          javac --release 17 -d build/dom "Lab2/JAVA DOM/src/DOMNavigator.java"
+          javac --release 17 -d build/sax "Lab2/SAX PARSER/src/XMLEventsPresentor.java"
+          javac --release 17 -d build/xsl Lab2/XSLTranformer/src/XSLTransformer.java
+          jar --create --file $L/dom-navigator.jar --main-class DOMNavigator -C build/dom .
+          jar --create --file $L/sax-presentor.jar --main-class XMLEventsPresentor -C build/sax .
+          jar --create --file $L/xsl-transformer.jar --main-class XSLTransformer -C build/xsl .
+          cp "Lab2/JAVA DOM/generalXML.xml" Lab2/cars.xml Lab2/cars.xsl $L/
+          cp deps/xalan-2.7.3.jar deps/serializer-2.7.3.jar $L/
+          cp -r licenses release/HOW-TO-RUN.txt $L/
+
+      - name: Build Lab 3 SOAP service and client
+        run: |
+          L=stage/lab3
+          W=stage/soapwar
+          LIBS=$SOAP/lib/soap.jar:deps/javax.mail-1.6.2.jar:deps/jakarta.activation-1.2.2.jar
+          mkdir -p $L/lib $W/WEB-INF/lib $W/WEB-INF/classes
+          (cd $W && unzip -q ../../$SOAP/webapps/soap.war)
+          cp $SOAP/lib/soap.jar deps/javax.mail-1.6.2.jar deps/jakarta.activation-1.2.2.jar $W/WEB-INF/lib/
+          cp $SOAP/lib/soap.jar deps/javax.mail-1.6.2.jar deps/jakarta.activation-1.2.2.jar $L/lib/
+          javac --release 17 -nowarn -cp $LIBS -d $W/WEB-INF/classes Lab3/BVShop/*.java
+          (cd $W && zip -qr ../lab3/soap.war .)
+          printf 'Class-Path: lib/soap.jar lib/javax.mail-1.6.2.jar lib/jakarta.activation-1.2.2.jar\n' > build/client-manifest.txt
+          jar --create --file $L/bvshop-client.jar --manifest build/client-manifest.txt \
+              --main-class BVShop.BVAdderLister -C $W/WEB-INF/classes BVShop
+          cp Lab3/BVCatalogDD.xml $L/
+          cp -r licenses release/HOW-TO-RUN.txt $L/
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          for lab in lab1 lab2 lab3; do
+            name=internet-apps-$VERSION-$lab-java
+            mv stage/$lab stage/$name
+            (cd stage && zip -qr ../dist/$name.zip $name)
+          done
+          ls -l dist
+
+      - name: Check the Lab 2 tools
+        run: |
+          mkdir -p check && cd check
+          unzip -q ../dist/internet-apps-$VERSION-lab2-java.zip && cd internet-apps-$VERSION-lab2-java
+          java -jar dom-navigator.jar generalXML.xml && diff output.txt "../../Lab2/JAVA DOM/outputDOM.txt"
+          java -jar sax-presentor.jar generalXML.xml && diff output.txt "../../Lab2/SAX PARSER/outputSAX.txt"
+          java -jar xsl-transformer.jar cars.xml && diff cars.html ../../Lab2/XSLTranformer/cars2.html
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: internet-apps-${{ env.VERSION }}
+          path: dist/*.zip
+
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > notes.txt <<'EOF'
+          This release has ready-to-run builds of the three labs, compiled with JDK 27 for Java 17 or newer.
+          The lab1 zip holds the servlet web shop as a WAR for Tomcat 11. The lab2 zip holds the DOM, SAX and XSLT tools as runnable jars with the sample XML and XSL files.
+          The lab3 zip holds a soap.war for the webapps-javaee folder of Tomcat 11 and a runnable SOAP client jar.
+          Each zip has a HOW-TO-RUN.txt with the exact commands, and third-party licenses are in the licenses folder.
+          EOF
+          gh release create "$VERSION" dist/*.zip --title "$VERSION" --notes-file notes.txt
